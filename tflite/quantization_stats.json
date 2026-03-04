@@ -1,0 +1,21 @@
+{
+  "stage_a": {
+    "original_path": "models/stage_a_final.keras",
+    "quantized_path": "tflite/stage_a_int8.tflite",
+    "original_size_bytes": 216068,
+    "quantized_size_bytes": 17976,
+    "original_size_kb": 211.00390625,
+    "quantized_size_kb": 17.5546875,
+    "compression_ratio": 12.019804183355586
+  },
+  "stage_a_validation": {
+    "model_path": "tflite/stage_a_int8.tflite",
+    "num_samples": 100,
+    "correct": 100,
+    "accuracy": 1.0,
+    "input_scale": 0.003921568859368563,
+    "input_zero_point": -128,
+    "output_scale": 0.00390625,
+    "output_zero_point": -128
+  }
+}

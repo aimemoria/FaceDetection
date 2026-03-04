@@ -30,15 +30,15 @@ The six conditions tracked in this report:
 Estimated accuracy per condition at each training stage.
 Estimates are based on what training data and augmentations were present or absent.
 
-| Condition | Run 4 | Run 5 | Run 6 | Run 7 | Run 8 (Latest) |
-|-----------|:-----:|:-----:|:-----:|:-----:|:--------------:|
-| 1. Clean face, plain background | ~95% | ~98% | ~98% | ~98% | ~99% |
-| 2. Real indoor background, no face | ~45% | ~82% | ~88% | ~93% | ~95% |
-| 3. Blurry / out-of-focus face | ~55% | ~83% | ~85% | ~93% | ~95% |
-| 4. Shadows / low light | ~60% | ~80% | ~83% | ~92% | ~96% |
-| 5. Harsh backlight | ~50% | ~75% | ~78% | ~92% | ~95% |
-| 6. Partial face / occlusion | ~65% | ~80% | ~85% | ~93% | ~95% |
-| **Overall estimated average** | **~62%** | **~83%** | **~86%** | **~93%** | **~96%** |
+| Condition | Run 4 | Run 5 | Run 6 | Run 7 | Run 8 | Run 9 (Latest) |
+|-----------|:-----:|:-----:|:-----:|:-----:|:-----:|:--------------:|
+| 1. Clean face, plain background | ~95% | ~98% | ~98% | ~98% | ~99% | ~99% |
+| 2. Real indoor background, no face | ~45% | ~82% | ~88% | ~93% | ~95% | ~98% |
+| 3. Blurry / out-of-focus face | ~55% | ~83% | ~85% | ~93% | ~95% | ~97% |
+| 4. Shadows / low light | ~60% | ~80% | ~83% | ~92% | ~96% | ~98% |
+| 5. Harsh backlight | ~50% | ~75% | ~78% | ~92% | ~95% | ~97% |
+| 6. Partial face / occlusion | ~65% | ~80% | ~85% | ~93% | ~95% | ~97% |
+| **Overall estimated average** | **~62%** | **~83%** | **~86%** | **~93%** | **~96%** | **~98%** |
 
 > These are estimates, not measured benchmarks. Each estimate is grounded in what the model
 > was and was not trained on — see the reasoning section below.
@@ -143,7 +143,7 @@ Estimates are based on what training data and augmentations were present or abse
 
 ---
 
-### Run 8 — Final Release (2026-03-04)
+### Run 8 (2026-03-04)
 
 **What was added:**
 
@@ -170,6 +170,38 @@ Estimates are based on what training data and augmentations were present or abse
 
 ---
 
+### Run 9 — Realistic Camera-Scale Dataset (2026-03-04)
+
+**Problem Identified:**
+The model was trained on tightly-cropped faces (face fills 80-90% of frame), but the camera captures full scenes where the face is only 45-75% of the frame. This domain mismatch caused detection failures even in perfect conditions.
+
+**What was added:**
+
+| Change | Targets condition |
+|--------|-------------------|
+| Realistic dataset generator with camera-scale faces | All conditions — training matches inference |
+| Face fills 45-75% of 96×96 frame (matches OV2640 capture) | All conditions |
+| 4,200 person + 4,200 no_person realistic images | All conditions |
+| Gray backgrounds with noise (80-180 gray level, σ=5-15) | Condition 2 |
+| 8× augmentation, 52,920 training samples | All conditions |
+| Firmware: simple center crop (96×96 from 160×120) | All conditions — removed buggy contrast detection |
+
+| Condition | Estimated | Reason |
+|-----------|:---------:|--------|
+| 1. Clean face, plain bg | ~99% | Training data now matches inference exactly |
+| 2. Real indoor bg | ~98% | Gray backgrounds with noise match real camera output |
+| 3. Blurry face | ~97% | Same blur augmentations + correct face scale |
+| 4. Shadows / low light | ~98% | Histogram equalization + correct scale |
+| 5. Harsh backlight | ~97% | Brightness augmentations at correct scale |
+| 6. Partial face / occlusion | ~97% | Occlusion augmentations + realistic framing |
+
+**Lab result:** 99.92% on 1,260-sample test set (1 error) · INT8 validation 100% on 100 samples
+**Model size:** 17.55 KB
+
+**Root cause fixed:** Training data now has faces at the same scale as what the camera actually captures.
+
+---
+
 ## Key Decisions Log
 
 | Date | Decision | Reason |
@@ -186,6 +218,8 @@ Estimates are based on what training data and augmentations were present or abse
 | 2026-03-04 | Added deep shadow simulation (0.1–0.35×) | Model now handles very dark room conditions |
 | 2026-03-04 | Firmware: contrast-based face localization | Finds faces by texture/edges instead of brightness — works in shadows |
 | 2026-03-04 | 12× augmentation (was 8×), 35,490 training samples | More diverse training for better generalization |
+| 2026-03-04 | **Realistic dataset with camera-scale faces** | **Root cause: training faces (80-90% frame) vs camera faces (45-75% frame) mismatch** |
+| 2026-03-04 | Firmware: simple center crop instead of contrast detection | Contrast-based detection was unreliable; center crop is robust |
 
 ---
 

@@ -610,74 +610,37 @@ bool captureAndCropFace() {
   myCAM.CS_HIGH();
   restoreJPEGMode();
 
-  // 2. Find region with highest LOCAL CONTRAST (edges/texture)
-  //    Faces have more texture than flat backgrounds, even in shadows.
-  //    We measure contrast as sum of absolute differences with neighbors.
-  const int WIN_SIZE = 48;
-  const int STEP = 8;
-  int best_x = (FULL_W - WIN_SIZE) / 2;
-  int best_y = (FULL_H - WIN_SIZE) / 2;
-  uint32_t best_score = 0;
-
-  // Compute global stats for debug
-  uint32_t global_sum = 0;
-  for (int i = 0; i < FULL_W * FULL_H; i++) {
-    global_sum += full_frame[i];
+  // SIMPLIFIED APPROACH: Just take the center 96x96 region directly
+  // The model should be trained on full scenes, not cropped faces
+  // This avoids complex face detection that may fail
+  
+  // Calculate center crop coordinates
+  // From 160x120, take center region that maps to 96x96
+  int crop_w = 96;  // We want a square crop
+  int crop_h = 96;
+  int start_x = (FULL_W - crop_w) / 2;  // 32
+  int start_y = (FULL_H - crop_h) / 2;  // 12
+  
+  // If source is smaller, adjust
+  if (crop_h > FULL_H) {
+    crop_h = FULL_H;
+    start_y = 0;
   }
-  uint8_t global_avg = global_sum / (FULL_W * FULL_H);
-
-  // Scan for highest contrast window (faces have texture/edges)
-  for (int wy = 0; wy <= FULL_H - WIN_SIZE; wy += STEP) {
-    for (int wx = 0; wx <= FULL_W - WIN_SIZE; wx += STEP) {
-      uint32_t contrast_sum = 0;
-      uint32_t brightness_sum = 0;
-      
-      // Sample pixels and compute local contrast (gradient magnitude)
-      for (int dy = 2; dy < WIN_SIZE - 2; dy += 4) {
-        for (int dx = 2; dx < WIN_SIZE - 2; dx += 4) {
-          int idx = (wy + dy) * FULL_W + (wx + dx);
-          uint8_t center = full_frame[idx];
-          uint8_t left   = full_frame[idx - 1];
-          uint8_t right  = full_frame[idx + 1];
-          uint8_t up     = full_frame[idx - FULL_W];
-          uint8_t down   = full_frame[idx + FULL_W];
-          
-          // Sobel-like gradient magnitude (simplified)
-          int gx = abs((int)right - (int)left);
-          int gy = abs((int)down - (int)up);
-          contrast_sum += gx + gy;
-          brightness_sum += center;
-        }
-      }
-      
-      // Score = contrast * brightness_bonus (prefer brighter regions with texture)
-      // This finds faces even in shadows (they still have edges)
-      uint32_t score = contrast_sum;
-      
-      // Slight center preference (faces usually centered in frame)
-      int cx = wx + WIN_SIZE / 2;
-      int cy = wy + WIN_SIZE / 2;
-      int dist_from_center = abs(cx - FULL_W/2) + abs(cy - FULL_H/2);
-      score = score * 120 / (100 + dist_from_center);
-      
-      if (score > best_score) {
-        best_score = score;
-        best_x = wx;
-        best_y = wy;
-      }
-    }
+  if (crop_w > FULL_W) {
+    crop_w = FULL_W;
+    start_x = 0;
   }
 
-  Serial.print("Face region: x="); Serial.print(best_x);
-  Serial.print(" y="); Serial.print(best_y);
-  Serial.print(" contrast_score="); Serial.print(best_score);
-  Serial.print(" (global_avg="); Serial.print(global_avg); Serial.println(")");
+  Serial.print("Center crop: x="); Serial.print(start_x);
+  Serial.print(" y="); Serial.print(start_y);
+  Serial.print(" w="); Serial.print(crop_w);
+  Serial.print(" h="); Serial.println(crop_h);
 
-  // 3. Extract and resize the detected region to 96x96
+  // Extract center region and resize to 96x96
   for (int r = 0; r < IMG_HEIGHT; r++) {
     for (int c = 0; c < IMG_WIDTH; c++) {
-      int src_r = best_y + (r * WIN_SIZE) / IMG_HEIGHT;
-      int src_c = best_x + (c * WIN_SIZE) / IMG_WIDTH;
+      int src_r = start_y + (r * crop_h) / IMG_HEIGHT;
+      int src_c = start_x + (c * crop_w) / IMG_WIDTH;
       if (src_r >= FULL_H) src_r = FULL_H - 1;
       if (src_c >= FULL_W) src_c = FULL_W - 1;
       image_buffer[r * IMG_WIDTH + c] = full_frame[src_r * FULL_W + src_c];
