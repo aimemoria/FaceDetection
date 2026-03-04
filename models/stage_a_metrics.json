@@ -1,0 +1,18 @@
+{
+  "model_name": "stage_a",
+  "test_accuracy": 0.9897435897435898,
+  "confusion_matrix": [
+    [
+      370,
+      5
+    ],
+    [
+      1,
+      209
+    ]
+  ],
+  "class_names": [
+    "no_person",
+    "person"
+  ]
+}

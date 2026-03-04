@@ -1,0 +1,25 @@
+# Face Detection System Requirements
+# Python 3.8+ recommended
+
+# Core ML/DL
+tensorflow>=2.12.0
+tensorflow-datasets>=4.9.0
+numpy>=1.23.0
+scikit-learn>=1.2.0
+
+# Dataset downloading (UTKFace via HuggingFace)
+datasets>=4.0.0
+
+# Image Processing
+opencv-python>=4.7.0
+Pillow>=9.4.0
+
+# Data Handling
+matplotlib>=3.7.0
+
+# Serial Communication (for Arduino capture)
+pyserial>=3.5
+
+# Optional: Jupyter support
+jupyter>=1.0.0
+ipykernel>=6.22.0

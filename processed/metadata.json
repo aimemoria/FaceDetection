@@ -1,0 +1,11 @@
+{
+  "img_size": 96,
+  "num_classes_stage_a": 2,
+  "class_names_stage_a": [
+    "no_person",
+    "person"
+  ],
+  "stage_a_train_size": 35490,
+  "stage_a_val_size": 585,
+  "stage_a_test_size": 585
+}

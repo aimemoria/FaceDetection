@@ -1,0 +1,20 @@
+{
+  "stage_a": {
+    "original_path": "models/stage_a_final.keras",
+    "quantized_path": "models/stage_a_int8.tflite",
+    "original_size_bytes": 216068,
+    "quantized_size_bytes": 17944,
+    "original_size_kb": 211.00390625,
+    "quantized_size_kb": 17.5234375,
+    "compression_ratio": 12.041239411502453
+  },
+  "stage_b": {
+    "original_path": "models/stage_b_final.keras",
+    "quantized_path": "models/stage_b_int8.tflite",
+    "original_size_bytes": 226180,
+    "quantized_size_bytes": 23048,
+    "original_size_kb": 220.87890625,
+    "quantized_size_kb": 22.5078125,
+    "compression_ratio": 9.813432835820896
+  }
+}
