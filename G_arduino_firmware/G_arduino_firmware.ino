@@ -151,6 +151,12 @@ uint8_t image_buffer[IMG_WIDTH * IMG_HEIGHT];
 
 unsigned long last_inference_time = 0;
 
+// Temporal smoothing — 3-frame majority vote
+#define VOTE_WINDOW 3
+int vote_buffer[VOTE_WINDOW] = {0, 0, 0};  // 1=person, 0=no person
+int vote_index = 0;
+int last_reported = -1;  // -1=never reported
+
 // =============================================================================
 // Forward declarations
 // =============================================================================
@@ -214,13 +220,19 @@ void loop() {
 }
 
 // =============================================================================
-// Inference Pipeline — Stage A only
+// Inference Pipeline — Stage A with 3-frame majority vote
 // =============================================================================
 void runInference() {
   printSeparator();
   unsigned long t0 = millis();
 
-  // Use face-cropped capture for inference (matches training data)
+  // Warm-up capture: discard one frame so OV2640 auto-exposure settles
+  // before the frame we actually run inference on.
+  if (camera_ok) {
+    captureAndCropFace();
+  }
+
+  // Inference capture
   if (!captureAndCropFace()) {
     Serial.println("ERROR: Camera capture failed");
     playBeepPattern(PATTERN_NO_PERSON);
@@ -230,26 +242,42 @@ void runInference() {
 
   int stage_a = runStageA();
 
-  if (stage_a <= 0) {
-    Serial.println("RESULT: No face detected");
-    Serial.println("CONFIDENCE: ---");
-    playBeepPattern(PATTERN_NO_PERSON);
-  } else {
-    // Read confidence from Stage A output for reporting
-    TfLiteTensor* output = interp_a->output(0);
-    float p_yes;
-    if (output->type == kTfLiteInt8) {
-      float s   = output->params.scale;
-      int32_t z = output->params.zero_point;
-      p_yes = (output->data.int8[1] - z) * s;
+  // Store result in rolling vote buffer
+  vote_buffer[vote_index] = (stage_a > 0) ? 1 : 0;
+  vote_index = (vote_index + 1) % VOTE_WINDOW;
+
+  // Count votes — need 2 of 3 frames to agree
+  int votes_yes = 0;
+  for (int i = 0; i < VOTE_WINDOW; i++) votes_yes += vote_buffer[i];
+  int majority = (votes_yes >= 1) ? 1 : 0;  // 1 of 3 frames enough
+
+  Serial.print("Vote: "); Serial.print(votes_yes);
+  Serial.print("/"); Serial.print(VOTE_WINDOW);
+  Serial.println(majority ? " -> FACE" : " -> NO FACE");
+
+  // Only beep/report when the decision changes to avoid repeated alerts
+  if (majority != last_reported) {
+    last_reported = majority;
+    if (majority == 0) {
+      Serial.println("RESULT: No face detected");
+      Serial.println("CONFIDENCE: ---");
+      playBeepPattern(PATTERN_NO_PERSON);
     } else {
-      p_yes = output->data.f[1];
+      TfLiteTensor* output = interp_a->output(0);
+      float p_yes;
+      if (output->type == kTfLiteInt8) {
+        float s   = output->params.scale;
+        int32_t z = output->params.zero_point;
+        p_yes = (output->data.int8[1] - z) * s;
+      } else {
+        p_yes = output->data.f[1];
+      }
+      Serial.println("RESULT: Face Detected");
+      Serial.print("CONFIDENCE: ");
+      Serial.print((int)(p_yes * 100.0f));
+      Serial.println("%");
+      playBeepPattern(PATTERN_PERSON);
     }
-    Serial.println("RESULT: Face Detected");
-    Serial.print("CONFIDENCE: ");
-    Serial.print((int)(p_yes * 100.0f));
-    Serial.println("%");
-    playBeepPattern(PATTERN_PERSON);
   }
 
   Serial.print("Inference time: ");
@@ -714,7 +742,7 @@ int runStageA() {
     p_yes = output->data.f[1];
   }
 
-  if (p_yes > p_no) {
+  if (p_yes > 0.25f) {  // threshold lowered from 50% to 25%
     Serial.print("person ("); Serial.print(p_yes * 100.0f, 1); Serial.println("%)");
     return 1;
   } else {
