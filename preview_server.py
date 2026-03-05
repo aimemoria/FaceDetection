@@ -17,6 +17,7 @@ Usage:
 Then open:  http://localhost:7654
 """
 
+import re
 import serial
 import threading
 import time
@@ -93,6 +94,18 @@ def serial_reader():
                     with lock:
                         latest_confidence = line.replace('CONFIDENCE:', '').strip()
                     print(f"  {line}")
+                elif line.startswith('Vote:'):
+                    if 'NO FACE' in line:
+                        with lock:
+                            latest_result = 'No Face Detected'
+                    elif 'FACE' in line:
+                        with lock:
+                            latest_result = 'Face Detected'
+                elif line.startswith('Stage A:'):
+                    m = re.search(r'\(([0-9.]+)%\)', line)
+                    if m:
+                        with lock:
+                            latest_confidence = m.group(1) + '%' 
 
             # Extract complete JPEG frames
             while True:

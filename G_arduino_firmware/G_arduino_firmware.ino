@@ -58,7 +58,7 @@
 #define IMG_CHANNELS        1
 
 #define ARENA_A_SIZE  (48 * 1024)   // 48 KB for Stage A
-#define INFERENCE_INTERVAL_MS  500  // ms between frames
+#define INFERENCE_INTERVAL_MS  2000  // ms gap between inference cycles (preview streams during gap)
 
 // =============================================================================
 // Buzzer patterns  {freq, duration_ms, pause_ms, ...}  — zero-terminated
@@ -213,9 +213,11 @@ void setup() {
 void loop() {
   unsigned long now = millis();
   if (now - last_inference_time >= INFERENCE_INTERVAL_MS) {
-    last_inference_time = now;
     runInference();
-    streamPreviewJPEG();   // always stream — uses TEST_JPEG when camera unavailable
+    last_inference_time = millis();  // reset AFTER inference — gap starts here
+    streamPreviewJPEG();
+  } else {
+    streamPreviewJPEG();  // stream preview frames during the gap between inferences
   }
 }
 
