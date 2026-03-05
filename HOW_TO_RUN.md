@@ -37,20 +37,24 @@ arduino-cli upload --fqbn arduino:mbed_nano:nano33ble --port /dev/cu.usbmodem101
 
 > **Note:** If upload fails with "Device unsupported", double-press the reset button on the Arduino to enter bootloader mode (LED will pulse), then run the upload command again immediately.
 
-### 2. Monitor Serial Output
-
-```bash
-arduino-cli monitor --port /dev/cu.usbmodem101 --config baudrate=115200
-```
-
-### 3. Run Live Camera Preview
+### 2. Run Live Camera Preview + Terminal Feedback
 
 ```bash
 cd "/Users/aimemoria/Documents/dynamic/face detectors/face_detection_system"
-python3 preview_server.py
+python3 -u preview_server.py
 ```
 
 Open **http://localhost:7654** in your browser.
+
+The terminal will print clean feedback every inference cycle:
+```
+  Stage A: 215 ms — person (92.3%)
+  Vote: 1/3 -> FACE DETECTED
+  RESULT: Face Detected
+  CONFIDENCE: 92.3%
+```
+
+> **Note:** Do NOT use `arduino-cli monitor` with this firmware — it prints raw JPEG binary to the terminal. The preview server handles serial reading exclusively.
 
 ### 4. Test Model on Webcam (no Arduino needed)
 

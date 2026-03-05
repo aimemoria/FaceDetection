@@ -98,14 +98,17 @@ def serial_reader():
                     if 'NO FACE' in line:
                         with lock:
                             latest_result = 'No Face Detected'
+                        print(f'  {line}')
                     elif 'FACE' in line:
                         with lock:
                             latest_result = 'Face Detected'
+                        print(f'  {line}')
                 elif line.startswith('Stage A:'):
                     m = re.search(r'\(([0-9.]+)%\)', line)
                     if m:
                         with lock:
-                            latest_confidence = m.group(1) + '%' 
+                            latest_confidence = m.group(1) + '%'
+                    print(f'  {line}')
 
             # Extract complete JPEG frames
             while True:
