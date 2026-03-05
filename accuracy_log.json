@@ -4,6 +4,13 @@
     "date": "2026-03-04",
     "test_accuracy": 0.9992,
     "model_size_kb": 17.55,
-    "notes": ""
+    "notes": "Initial training on tightly-cropped Olivetti + LFW face images. Model failed on live webcam/Arduino because training data did not match real camera input (train-test domain mismatch)."
+  },
+  {
+    "run": 2,
+    "date": "2026-03-04",
+    "test_accuracy": 0.9984,
+    "model_size_kb": 17.55,
+    "notes": "Retrained on realistic synthetic dataset: 4200 faces composited onto backgrounds at 45-75% frame scale (matching actual ArduCAM captures). 8x augmentation applied (blur, noise, brightness, occlusion, histogram equalization). 52920 training samples total. Early stopping at epoch 49, best weights from epoch 24 (val_accuracy=1.00). INT8 TFLite validation: 100% on 100 samples. Deployed to Arduino Nano 33 BLE Sense Rev2."
   }
 ]

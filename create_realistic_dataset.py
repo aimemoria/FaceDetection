@@ -20,7 +20,7 @@ IMG_SIZE = 96
 DATASET_DIR = Path("dataset/stage_a")
 PERSON_DIR = DATASET_DIR / "person"
 NO_PERSON_DIR = DATASET_DIR / "no_person"
-OUTPUT_DIR = Path("dataset/stage_a_realistic")
+OUTPUT_DIR = Path("dataset_realistic")
 
 def create_realistic_face_image(face_img, background_color=128):
     """
@@ -102,9 +102,9 @@ def main():
     print("Creating Realistic Training Dataset")
     print("=" * 60)
     
-    # Create output directories
-    out_person = OUTPUT_DIR / "person"
-    out_no_person = OUTPUT_DIR / "no_person"
+    # Create output directories (must match C_preprocess_and_augment.py's expected structure)
+    out_person = OUTPUT_DIR / "stage_a" / "person"
+    out_no_person = OUTPUT_DIR / "stage_a" / "no_person"
     out_person.mkdir(parents=True, exist_ok=True)
     out_no_person.mkdir(parents=True, exist_ok=True)
     
@@ -147,9 +147,9 @@ def main():
     print(f"  No-person: {count} images")
     print(f"  Location: {OUTPUT_DIR}")
     print("=" * 60)
-    
+
     print("\nNext: Run preprocessing and training:")
-    print("  python3 C_preprocess_and_augment.py --dataset_dir dataset/stage_a_realistic --output_dir processed --augment_train --augmentations 8")
+    print("  python3 C_preprocess_and_augment.py --dataset_dir dataset_realistic --output_dir processed --augment_train --augmentations 8")
     print("  python3 E_train_model.py --data_dir processed --output_dir models --epochs 30")
 
 if __name__ == "__main__":
